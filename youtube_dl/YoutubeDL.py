@@ -116,8 +116,8 @@ youtube_dl_url_key = "youtube_dl_url_key"
 
 
 class PlaylistTaskLog(object):
-    def __init__(self, task_id, tmp_path=None, max_retry_count=5, to_screen=None):
-        self.to_screen = to_screen or print
+    def __init__(self, task_id, to_screen, tmp_path=None, max_retry_count=5):
+        self.to_screen = to_screen
         self._task_id = task_id
         self._log = {}
         self._tmp_path = tmp_path or tempfile.gettempdir()
@@ -151,6 +151,9 @@ class PlaylistTaskLog(object):
     @classmethod
     def create_id_by_ie_result(cls, ie_result):
 
+        def get_md5(raw_str):
+            return hashlib.md5(encode_compat_str(raw_str)).hexdigest()
+
         def byteify(object_input):
             if isinstance(object_input, dict):
                 str_dict = {byteify(key): byteify(value) for key, value in object_input.items()}
@@ -162,17 +165,14 @@ class PlaylistTaskLog(object):
 
         try:
             if youtube_dl_url_key in ie_result:
-                try:
-                    return hashlib.md5(ie_result[youtube_dl_url_key]).hexdigest()
-                except Exception:
-                    return hashlib.md5(ie_result[youtube_dl_url_key].encode("utf-8")).hexdigest()
+                return get_md5(ie_result[youtube_dl_url_key])
         except Exception:
             pass
 
         try:
-            return hashlib.md5(json.dumps(ie_result, sort_keys=True)).hexdigest()
+            return get_md5(json.dumps(ie_result, sort_keys=True))
         except TypeError:
-            return hashlib.md5(byteify(ie_result).encode("utf-8")).hexdigest()
+            return get_md5(byteify(ie_result).encode("utf-8"))
 
     def __iter__(self):
         # python 2
